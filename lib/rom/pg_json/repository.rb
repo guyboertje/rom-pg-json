@@ -1,12 +1,6 @@
-require 'pg'
-require 'uri'
-
 require 'rom/repository'
 
-require 'rom/pg_json/dataset'
-require 'rom/pg_json/relation'
-
-module Rom
+module ROM
   module PgJson
     class Repository < ROM::Repository
       attr_reader :tables
@@ -26,12 +20,6 @@ module Rom
 
       def dataset?(name)
         connection.table_exists?(name.to_s)
-      end
-
-      private
-
-      def split_name(name)
-
       end
     end
   end

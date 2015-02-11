@@ -1,7 +1,8 @@
 require 'arel'
+require 'arel_pg_json'
 require 'json'
 
-module Rom
+module ROM
   module PgJson
     class Dataset
       attr_accessor :arel

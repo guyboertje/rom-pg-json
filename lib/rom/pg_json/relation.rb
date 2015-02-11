@@ -1,4 +1,4 @@
-module Rom
+module ROM
   module PgJson
     class Relation < ROM::Relation
     end
