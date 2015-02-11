@@ -17,7 +17,7 @@ module ROM
       end
 
       def filter(path, value)
-        refinement = Arel::Nodes::JsonHasDoubleArrow.new(@field, path)
+        refinement = Arel::Nodes::JsonHashDoubleArrow.new(@field, path)
         @filter = Arel::Nodes::Equality.new(refinement, value)
         self
       end
