@@ -34,6 +34,10 @@ module ROM
 
       private
 
+      def connection
+        repository.connection
+      end
+
       def raw_connection
         connection.connection.raw_connection
       end
