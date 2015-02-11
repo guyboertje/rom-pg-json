@@ -8,8 +8,9 @@ module ROM
       attr_accessor :arel
       attr_reader :field, :filter, :sql
 
-      def initialize(name)
-        @arel = Arel::Table.new(name.to_sym, connection)
+      def initialize(name, pool)
+        @pool = pool
+        @arel = Arel::Table.new(name.to_sym, @pool)
         @field = @arel[:serialised_data]
         @filter = nil
         @where = nil
@@ -35,11 +36,11 @@ module ROM
       private
 
       def connection
-        repository.connection
+        @pool.connection
       end
 
       def raw_connection
-        connection.connection.raw_connection
+        connection.raw_connection
       end
 
       def sql

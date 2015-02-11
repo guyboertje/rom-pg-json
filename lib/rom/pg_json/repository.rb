@@ -15,7 +15,7 @@ module ROM
       end
 
       def dataset(name)
-        tables[name] = Dataset.new(name)
+        tables[name] = Dataset.new(name, @connection)
       end
 
       def dataset?(name)
