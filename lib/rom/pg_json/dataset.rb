@@ -11,15 +11,18 @@ module ROM
         @json_field = @arel[:serialised_data]
         @json_criteria = nil
         @criteria = nil
+        @results = []
       end
 
       def criteria(criteria)
         @criteria = criteria
+        self
       end
 
       def json_criteria(path, value)
         refinement = Arel::Nodes::JsonHashDoubleArrow.new(@json_field, path)
         @json_criteria = Arel::Nodes::Equality.new(refinement, value)
+        self
       end
 
       def json_field(name)
@@ -27,9 +30,17 @@ module ROM
         self
       end
 
+      def exec
+        @results = raw_connection.exec(sql).values.flatten
+        self
+      end
+
       def each
-        raw_connection.exec(sql).values.flatten.each do |result|
-          yield result.nil? ? Hash.new : JSON.parse(result)
+        # exec if @results.size.zero?
+        @results.each do |result|
+          res = result.nil? ? Hash.new : JSON.parse(result)
+          binding.pry
+          yield res
         end
       end
 
