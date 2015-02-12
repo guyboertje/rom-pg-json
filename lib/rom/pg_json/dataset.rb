@@ -11,7 +11,20 @@ module ROM
         @json_field = @arel[:serialised_data]
         @json_criteria = nil
         @criteria = nil
+        @limit = nil
+        @offset = nil
+        @executed = false
         @results = []
+      end
+
+      def limit(amount)
+        @limit = amount
+        self
+      end
+
+      def offset(amount)
+        @offset = amount
+        self
       end
 
       def criteria(criteria)
@@ -32,15 +45,14 @@ module ROM
 
       def exec
         @results = raw_connection.exec(sql).values.flatten
+        @executed = true
         self
       end
 
       def each
-        # exec if @results.size.zero?
+        exec unless @executed
         @results.each do |result|
-          res = result.nil? ? Hash.new : JSON.parse(result)
-          binding.pry
-          yield res
+          yield result.nil? ? Hash.new : JSON.parse(result)
         end
       end
 
@@ -50,6 +62,8 @@ module ROM
         collector = @arel.project(@json_field)
         collector = collector.where(@criteria) if @criteria
         collector = collector.where(@json_criteria) if @json_criteria
+        collector = collector.skip(@offset) if @offset
+        collector = collector.take(@limit) if @limit
         collector.to_sql
       end
 
