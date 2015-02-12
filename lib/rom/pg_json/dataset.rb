@@ -5,28 +5,25 @@ require 'json'
 module ROM
   module PgJson
     class Dataset
-      attr_accessor :arel
-      attr_reader :field, :filter
-
       def initialize(name, pool)
         @pool = pool
         @arel = Arel::Table.new(name.to_sym, @pool)
-        @field = @arel[:serialised_data]
-        @filter = nil
-        @where = nil
+        @json_field = @arel[:serialised_data]
+        @json_criteria = nil
+        @criteria = nil
       end
 
-      def where(criteria)
-        @where = criteria
+      def criteria(criteria)
+        @criteria = criteria
       end
 
-      def filter(path, value)
-        refinement = Arel::Nodes::JsonHashDoubleArrow.new(@field, path)
-        @filter = Arel::Nodes::Equality.new(refinement, value)
+      def json_criteria(path, value)
+        refinement = Arel::Nodes::JsonHashDoubleArrow.new(@json_field, path)
+        @json_criteria = Arel::Nodes::Equality.new(refinement, value)
       end
 
-      def field(name)
-        @field = @arel[name.to_sym]
+      def json_field(name)
+        @json_field = @arel[name.to_sym]
         self
       end
 
@@ -36,14 +33,14 @@ module ROM
         end
       end
 
+      private
+
       def sql
-        collector = @arel.project(@field)
-        collector = collector.where(@where) if @where
-        collector = collector.where(@filter) if @filter
+        collector = @arel.project(@json_field)
+        collector = collector.where(@criteria) if @criteria
+        collector = collector.where(@json_criteria) if @json_criteria
         collector.to_sql
       end
-
-      private
 
       def connection
         @pool.connection
