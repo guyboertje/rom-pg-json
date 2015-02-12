@@ -44,13 +44,15 @@ module ROM
       end
 
       def exec
+        puts '-------------------- exec --------------------'
         @results = raw_connection.exec(sql).values.flatten
         @executed = true
         self
       end
 
       def each
-        exec unless @executed
+        # exec unless @executed
+        exec
         @results.each do |result|
           yield result.nil? ? Hash.new : JSON.parse(result)
         end
