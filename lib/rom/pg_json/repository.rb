@@ -7,19 +7,24 @@ module ROM
 
       def initialize(pg_connection)
         @connection = pg_connection
-        @tables = {}
       end
 
       def [](name)
-        tables.fetch(name)
+        build_dataset(name)
       end
 
       def dataset(name)
-        tables[name] = Dataset.new(name, @connection)
+        build_dataset(name)
       end
 
       def dataset?(name)
         connection.table_exists?(name.to_s)
+      end
+
+      private
+
+      def build_dataset(name)
+        Dataset.new(name, @connection)
       end
     end
   end
