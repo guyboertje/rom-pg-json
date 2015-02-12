@@ -8,13 +8,7 @@ module ROM
       def initialize(name, pool)
         @pool = pool
         @arel = Arel::Table.new(name.to_sym, @pool)
-        @json_field = @arel[:serialised_data]
-        @json_criteria = nil
-        @criteria = nil
-        @limit = nil
-        @offset = nil
-        @executed = false
-        @results = []
+        reset
       end
 
       def limit(amount)
@@ -46,16 +40,23 @@ module ROM
       def exec
         puts '-------------------- exec --------------------'
         @results = raw_connection.exec(sql).values.flatten
-        @executed = true
         self
       end
 
       def each
-        # exec unless @executed
         exec
         @results.each do |result|
           yield result.nil? ? Hash.new : JSON.parse(result)
         end
+      end
+
+      def reset
+        @json_field = @arel[:serialised_data]
+        @json_criteria = nil
+        @criteria = nil
+        @limit = nil
+        @offset = nil
+        @results = []
       end
 
       private
