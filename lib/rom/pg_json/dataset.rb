@@ -16,6 +16,10 @@ module ROM
         @where = nil
       end
 
+      def where(criteria)
+        @where = criteria
+      end
+
       def filter(path, value)
         refinement = Arel::Nodes::JsonHashDoubleArrow.new(@field, path)
         @filter = Arel::Nodes::Equality.new(refinement, value)
@@ -28,7 +32,7 @@ module ROM
 
       def each
         raw_connection.exec(sql).values.flatten.each do |result|
-          yield JSON.parse(result)
+          yield result.nil? ? Hash.new : JSON.parse(result)
         end
       end
 
@@ -48,8 +52,6 @@ module ROM
       def raw_connection
         connection.raw_connection
       end
-
-
     end
   end
 end
