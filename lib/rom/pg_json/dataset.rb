@@ -6,7 +6,7 @@ module ROM
   module PgJson
     class Dataset
       attr_accessor :arel
-      attr_reader :field, :filter, :sql
+      attr_reader :field, :filter
 
       def initialize(name, pool)
         @pool = pool
@@ -32,6 +32,13 @@ module ROM
         end
       end
 
+      def sql
+        collector = @arel.project(@field)
+        collector = collector.where(@where) if @where
+        collector = collector.where(@filter) if @filter
+        collector.to_sql
+      end
+
       private
 
       def connection
@@ -40,13 +47,6 @@ module ROM
 
       def raw_connection
         connection.raw_connection
-      end
-
-      def sql
-        collector = @arel.project(@field)
-        collector = collector.where(@where) if @where
-        collector = collector.where(@filter) if @filter
-        collector.to_sql
       end
 
 
