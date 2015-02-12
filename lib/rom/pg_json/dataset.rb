@@ -66,7 +66,7 @@ module ROM
         collector = collector.where(@json_criteria) if @json_criteria
         collector = collector.skip(@offset) if @offset
         collector = collector.take(@limit) if @limit
-        collector.to_sql
+        collector.to_sql.tap{|s| puts s}
       end
 
       def connection
