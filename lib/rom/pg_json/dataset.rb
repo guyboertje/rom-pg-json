@@ -10,7 +10,7 @@ module ROM
         @name, @connection_proc = name, connection_proc
       end
 
-      def exec
+      def exec(sql)
         puts '-------------------- exec --------------------'
         raw_connection.exec(sql).values.flatten
       end
