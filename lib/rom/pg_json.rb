@@ -1,5 +1,6 @@
 require 'rom'
 require 'rom/pg_json/repository'
+require 'rom/pg_json/query'
 require 'rom/pg_json/dataset'
 require 'rom/pg_json/relation'
 
