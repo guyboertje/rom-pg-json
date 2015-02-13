@@ -18,12 +18,14 @@ module ROM
       end
 
       def dataset?(name)
+        puts '-------------------- dataset? --------------------'
         connection.table_exists?(name.to_s)
       end
 
       private
 
       def build_dataset(name)
+        puts '-------------------- build_dataset --------------------'
         Dataset.new(name, @connection)
       end
     end

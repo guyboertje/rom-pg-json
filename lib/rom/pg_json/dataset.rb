@@ -6,6 +6,7 @@ module ROM
   module PgJson
     class Dataset
       def initialize(name, pool)
+        puts '-------------------- Dataset initialize --------------------'
         @pool = pool
         @arel = Arel::Table.new(name.to_sym, @pool)
         reset
