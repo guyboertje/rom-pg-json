@@ -1,10 +1,10 @@
 require 'rom'
+require 'rom/pg_json/reader'
 require 'rom/pg_json/repository'
 require 'rom/pg_json/query'
 require 'rom/pg_json/dataset'
 require 'rom/pg_json/relation'
-require 'rom/pg_json/reader'
 
 ROM.register_adapter(:pg_json, ROM::PgJson)
 
-ROM::Reader.send :include, ROM::PgJson::Reader
+# ROM::Reader.send :include, ROM::PgJson::Reader

@@ -15,9 +15,9 @@ module ROM
         raw_connection.exec(sql).values.flatten
       end
 
-      def each(sql, &blk)
+      def each(sql, &block)
         exec(sql).each do |result|
-          blk.call result.nil? ? Hash.new : JSON.parse(result)
+          block.call result.nil? ? Hash.new : JSON.parse(result)
         end
       end
 
