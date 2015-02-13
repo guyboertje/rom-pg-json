@@ -9,7 +9,7 @@ module ROM
 
       def each(&block)
         return to_enum unless block
-        @query.each(&block)
+        @query.each(dataset, &block)
       end
 
       def limit(amount)
