@@ -3,8 +3,6 @@ require 'rom/repository'
 module ROM
   module PgJson
     class Repository < ROM::Repository
-      attr_reader :tables
-
       def initialize(connection_proc)
         @connection = connection_proc
       end
@@ -20,6 +18,10 @@ module ROM
       def dataset?(name)
         puts '-------------------- dataset? --------------------'
         connection.call.table_exists?(name.to_s)
+      end
+
+      def schema
+        connection.call.tables
       end
 
       private
