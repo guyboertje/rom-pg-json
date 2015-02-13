@@ -21,7 +21,7 @@ module ROM
       end
 
       def schema
-        connection.call.tables
+        connection.call.connection.tables
       end
 
       private
