@@ -22,17 +22,17 @@ module ROM
       end
 
       def build_query
-        Query.new(@name, connection)
+        Query.new(@name, pool)
       end
 
       private
 
-      def connection
-        @connection_proc.call.connection
+      def pool
+        @connection_proc.call
       end
 
       def raw_connection
-        connection.raw_connection
+        pool.connection.raw_connection
       end
     end
   end
