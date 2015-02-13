@@ -5,74 +5,30 @@ require 'json'
 module ROM
   module PgJson
     class Dataset
-      def initialize(name, pool)
+      def initialize(name, connection_proc)
         puts '-------------------- Dataset initialize --------------------'
-        @pool = pool
-        @arel = Arel::Table.new(name.to_sym, @pool)
-        reset
-      end
-
-      def limit(amount)
-        @limit = amount
-        self
-      end
-
-      def offset(amount)
-        @offset = amount
-        self
-      end
-
-      def criteria(criteria)
-        @criteria = criteria
-        self
-      end
-
-      def json_criteria(path, value)
-        refinement = Arel::Nodes::JsonHashDoubleArrow.new(@json_field, path)
-        @json_criteria = Arel::Nodes::Equality.new(refinement, value)
-        self
-      end
-
-      def json_field(name)
-        @json_field = @arel[name.to_sym]
-        self
+        @name, @connection_proc = name, connection_proc
       end
 
       def exec
         puts '-------------------- exec --------------------'
-        @results = raw_connection.exec(sql).values.flatten
-        self
+        raw_connection.exec(sql).values.flatten
       end
 
-      def each
-        exec
-        @results.each do |result|
-          yield result.nil? ? Hash.new : JSON.parse(result)
+      def each(sql, &blk)
+        exec(sql).each do |result|
+          blk.call result.nil? ? Hash.new : JSON.parse(result)
         end
       end
 
-      def reset
-        @json_field = @arel[:serialised_data]
-        @json_criteria = nil
-        @criteria = nil
-        @limit = nil
-        @offset = nil
-        @results = []
+      def build_query
+        Query.new(@name, connection)
       end
 
       private
 
-      def sql
-        collector = @arel.project(@json_field)
-        collector = collector.where(@criteria) if @criteria
-        collector = collector.where(@json_criteria) if @json_criteria
-        collector = collector.skip(@offset) if @offset
-        collector = collector.take(@limit) if @limit
-        collector.to_sql.tap{|s| puts s}
-      end
-
       def connection
-        @pool.connection
+        @connection_proc.call.connection
       end
 
       def raw_connection

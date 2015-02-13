@@ -5,8 +5,8 @@ module ROM
     class Repository < ROM::Repository
       attr_reader :tables
 
-      def initialize(pg_connection)
-        @connection = pg_connection
+      def initialize(connection_proc)
+        @connection = connection_proc
       end
 
       def [](name)
@@ -19,14 +19,14 @@ module ROM
 
       def dataset?(name)
         puts '-------------------- dataset? --------------------'
-        connection.table_exists?(name.to_s)
+        connection.call.table_exists?(name.to_s)
       end
 
       private
 
       def build_dataset(name)
         puts '-------------------- build_dataset --------------------'
-        Dataset.new(name, @connection)
+        Dataset.new(name, connection)
       end
     end
   end
