@@ -6,7 +6,7 @@ module ROM
         super
       end
 
-      def reset_query(query)
+      def reset_query
         @query = dataset.build_query
         self
       end
