@@ -6,5 +6,3 @@ require 'rom/pg_json/dataset'
 require 'rom/pg_json/relation'
 
 ROM.register_adapter(:pg_json, ROM::PgJson)
-
-# ROM::Reader.send :include, ROM::PgJson::Reader

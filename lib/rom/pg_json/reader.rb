@@ -1,12 +1,14 @@
 module ROM
   class Reader
-    def initialize(path, relation, mappers, mapper = nil)
-      puts '-------------------- Reader extension initialize --------------------'
-      new_relation = relation.reset_query
-      puts self.class.ancestors.inspect
-      super path, new_relation, mappers, mapper
+    def reset_relation
+      relation.reset_query
     end
   end
-  # module PgJson
-  # end
+
+  class Env
+    def read(name, &block)
+      readers[name].reset_relation
+      super
+    end
+  end
 end

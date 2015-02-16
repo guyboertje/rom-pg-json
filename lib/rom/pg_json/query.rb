@@ -2,10 +2,9 @@ module ROM
   module PgJson
     class Query
       def initialize(name, pool)
-        puts '-------------------- Query initialize 0 --------------------'
+        puts '-------------------- Query initialize --------------------'
         @arel = Arel::Table.new(name.to_sym, pool)
         reset
-        puts '-------------------- Query initialize 1 --------------------'
       end
 
       def each(dataset, &block)
