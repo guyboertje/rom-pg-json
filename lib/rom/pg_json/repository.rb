@@ -3,8 +3,8 @@ require 'rom/repository'
 module ROM
   module PgJson
     class Repository < ROM::Repository
-      def initialize(connection_proc)
-        @connection = connection_proc
+      def initialize(connection_pool)
+        @connection = connection_pool
       end
 
       def [](name)
@@ -17,17 +17,12 @@ module ROM
 
       def dataset?(name)
         puts '-------------------- dataset? --------------------'
-        connection.call.table_exists?(name.to_s)
+        connection_pool.table_exists?(name.to_s)
       end
-
-      # def schema
-      #   ['orders']
-      # end
 
       private
 
       def build_dataset(name)
-        puts '-------------------- build_dataset --------------------'
         Dataset.new(name, connection)
       end
     end

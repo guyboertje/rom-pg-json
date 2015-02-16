@@ -1,7 +1,8 @@
 module ROM
   class Reader
     def reset_relation
-      relation.reset_query
+      original_relation = @relation
+      @relation = original_relation.class.new(original_relation.dataset, original_relation.__registry__)
     end
   end
 

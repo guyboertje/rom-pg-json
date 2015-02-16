@@ -1,19 +1,15 @@
 module ROM
   module PgJson
     class Relation < ROM::Relation
-      def initialize(dataset, registry = {})
-        puts '-------------------- PgJson::Relation initialize --------------------'
-        super
-      end
-
-      def reset_query
-        @query = dataset.build_query
-        self
-      end
+      include Enumerable
 
       def each(&block)
         return to_enum unless block
-        query.each(dataset, &block)
+        dataset.each(query, &block)
+      end
+
+      def all
+        dataset.all(query)
       end
 
       def limit(amount)

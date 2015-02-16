@@ -1,14 +1,8 @@
 module ROM
   module PgJson
     class Query
-      def initialize(name, pool)
-        puts '-------------------- Query initialize --------------------'
-        @arel = Arel::Table.new(name.to_sym, pool)
+      def initialize
         reset
-      end
-
-      def each(dataset, &block)
-        dataset.each(sql, &block)
       end
 
       def limit(amount)
@@ -27,32 +21,39 @@ module ROM
       end
 
       def json_criteria(path, value)
-        refinement = Arel::Nodes::JsonHashDoubleArrow.new(@json_field, path)
-        @json_criteria = Arel::Nodes::Equality.new(refinement, value)
+        @json_criteria_path, @json_criteria_value = path, value
         self
       end
 
       def json_field(name)
-        @json_field = @arel[name.to_sym]
+        @json_field = name.to_sym
         self
       end
 
       def reset
-        @json_field = @arel[:serialised_data]
-        @json_criteria = nil
+        @json_field = :serialised_data
+        @json_criteria_path = nil
+        @json_criteria_value = nil
         @criteria = nil
         @limit = nil
         @offset = nil
-        @results = []
       end
 
-      def sql
+      def sql(name)
         puts '-------------------- SQL --------------------'
-        collector = @arel.project(@json_field)
+        table = Arel::Table.new(name)
+        arel_json_field = table[@json_field]
+        collector = table.project(arel_json_field)
         collector = collector.where(@criteria) if @criteria
-        collector = collector.where(@json_criteria) if @json_criteria
+        if @json_criteria_path && @json_criteria_value
+          refinement = Arel::Nodes::JsonHashDoubleArrow.new(arel_json_field, @json_criteria_path)
+          collector = collector.where(
+            Arel::Nodes::Equality.new(refinement, @json_criteria_value)
+          )
+        end
         collector = collector.skip(@offset) if @offset
         collector = collector.take(@limit) if @limit
+        collector = collector.order(table[:id].asc)
         collector.to_sql.tap{|s| puts s}
       end
     end
