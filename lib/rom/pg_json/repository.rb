@@ -20,9 +20,9 @@ module ROM
         connection.call.table_exists?(name.to_s)
       end
 
-      def schema
-        ['orders']
-      end
+      # def schema
+      #   ['orders']
+      # end
 
       private
 

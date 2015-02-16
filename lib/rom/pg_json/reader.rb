@@ -6,9 +6,11 @@ module ROM
   end
 
   class Env
+    alias_method :orig_read, :read
+
     def read(name, &block)
       readers[name].reset_relation
-      super
+      orig_read(name, &block)
     end
   end
 end
