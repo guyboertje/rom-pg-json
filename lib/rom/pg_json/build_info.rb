@@ -23,7 +23,7 @@ module Rom
       private
 
       def version
-        '0.0.26'
+        '0.0.27'
       end
 
       def authors
