@@ -10,8 +10,11 @@ Gem::Specification.new do |spec|
 
   Rom::PgJson::BuildInfo.new.add_to_gemspec(spec)
 
-  # spec.add_runtime_dependency 'rom'
+  spec.add_runtime_dependency 'rom'
 
   spec.add_development_dependency 'bundler', '~> 1.7'
+  spec.add_development_dependency 'rspec-core', '~> 3.2'
+  spec.add_development_dependency 'rspec-mocks', '~> 3.2'
+  spec.add_development_dependency 'rspec-expectations', '~> 3.2'
   spec.add_development_dependency 'rake', '~> 10.0'
 end

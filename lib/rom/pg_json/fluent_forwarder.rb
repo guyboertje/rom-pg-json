@@ -1,5 +1,6 @@
 module ROM
   module PgJson
+    # with thanks to solnic/charlatan
     class FluentForwarder < Module
       attr_reader :name
 
@@ -11,18 +12,21 @@ module ROM
           instance_variable_get(ivar)
         end
 
-        extend ClassMethods
+        include Methods
       end
 
-      module ClassMethods
-        def fluent_forward(*methods)
-        methods.each do |method|
-          class_eval <<-RUBY, __FILE__, __LINE__ + 1
-            def #{method}(*args, &block)
-              __proxy_target__.__send__(:#{method}, *args, &block)
-              self
-            end
-          RUBY
+      module Methods
+        def respond_to_missing?(method_name, _include_private = false)
+          __proxy_target__.respond_to?(method_name, _include_private) || super
+        end
+
+        def method_missing(method_name, *args, &block)
+          if __proxy_target__.respond_to?(method_name)
+            __proxy_target__.public_send(method_name, *args, &block)
+            self
+          else
+            super
+          end
         end
       end
     end
