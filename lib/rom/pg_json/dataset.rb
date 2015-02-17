@@ -5,8 +5,9 @@ require 'json'
 module ROM
   module PgJson
     class Dataset
-      def initialize(name, connection_pool)
+      def initialize(name, connection_pool, query_class)
         @name, @pool = name, connection_pool
+        @query_class = query_class
       end
 
       def each(query, &block)
@@ -30,7 +31,7 @@ module ROM
       end
 
       def build_query
-        Query.new
+        query_class.new
       end
     end
   end

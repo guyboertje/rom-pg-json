@@ -3,8 +3,9 @@ require 'rom/repository'
 module ROM
   module PgJson
     class Repository < ROM::Repository
-      def initialize(connection_pool)
+      def initialize(connection_pool, query_class)
         @connection = connection_pool
+        @query_class = query_class
       end
 
       def [](name)
@@ -23,7 +24,7 @@ module ROM
       private
 
       def build_dataset(name)
-        Dataset.new(name, connection)
+        Dataset.new(name, connection, @query_class)
       end
     end
   end
