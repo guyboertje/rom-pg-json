@@ -1,4 +1,5 @@
 require 'rom'
+require 'rom/pg_json/forwarding'
 require 'rom/pg_json/reader'
 require 'rom/pg_json/repository'
 require 'rom/pg_json/query'
