@@ -30,6 +30,14 @@ module ROM
         end
       end
 
+      def count(query)
+        @pool.with_connection do |connection|
+          connection.raw_connection.exec(
+            query.sql(@name)
+          ).values.flatten.tap{|o| puts o.inspect }.first
+        end
+      end
+
       def build_query
         @query_class.new
       end

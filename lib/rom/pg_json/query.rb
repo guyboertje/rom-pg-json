@@ -30,6 +30,10 @@ module ROM
         self
       end
 
+      def count(flag)
+        @count = flag
+      end
+
       def reset
         @json_field = :serialised_data
         @json_criteria_path = nil
@@ -37,13 +41,18 @@ module ROM
         @criteria = nil
         @limit = nil
         @offset = nil
+        @count = false
       end
 
       def sql(name)
         puts '-------------------- SQL --------------------'
         table = Arel::Table.new(name)
         arel_json_field = table[@json_field]
-        collector = table.project(arel_json_field)
+        collector = if @count
+          table.project(arel_json_field.count.as("count"))
+        else
+          table.project(arel_json_field)
+        end
         collector = collector.where(@criteria) if @criteria
         if @json_criteria_path && @json_criteria_value
           refinement = Arel::Nodes::JsonHashDoubleArrow.new(arel_json_field, @json_criteria_path)

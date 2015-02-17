@@ -17,6 +17,13 @@ module ROM
         dataset.all(query)
       end
 
+      def count
+        query.count(true)
+        dataset.count(query)
+      ensure
+        query.count(false)
+      end
+
       def query
         @query
       end
