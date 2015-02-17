@@ -18,10 +18,10 @@ module ROM
       end
 
       def count
-        query.count(true)
+        query.set_count(true)
         dataset.count(query)
       ensure
-        query.count(false)
+        query.set_count(false)
       end
 
       def query

@@ -30,8 +30,12 @@ module ROM
         self
       end
 
-      def count(flag)
+      def set_count(flag)
         @count = flag
+      end
+
+      def order_by(spec)
+        @order_spec
       end
 
       def reset
@@ -42,28 +46,52 @@ module ROM
         @limit = nil
         @offset = nil
         @count = false
+        @order_spec = {id: :asc}
       end
 
       def sql(name)
         puts '-------------------- SQL --------------------'
         table = Arel::Table.new(name)
         arel_json_field = table[@json_field]
-        collector = if @count
-          table.project(arel_json_field.count.as("count"))
+        select = project(table, arel_json_field)
+        select.where(@criteria) if @criteria
+        select.skip(@offset) if @offset
+        select.take(@limit) if @limit
+        add_json_criteria(select, arel_json_field)
+        add_ordering(select, table)
+        build_sql(select).tap{|s| puts s}
+      end
+
+      private
+
+      def add_ordering(select, table)
+        return if @count
+        @order_spec.each do |field, dir|
+          select.order(table[field].send(dir))
+        end
+      end
+
+      def add_json_criteria(select, field)
+        return unless @json_criteria_path && @json_criteria_value
+        path_node = Arel::Nodes::JsonHashDoubleArrow.new(field, @json_criteria_path)
+        equals_node = Arel::Nodes::Equality.new(path_node, @json_criteria_value)
+        select.where(equals_node)
+      end
+
+      def build_sql(select)
+        str = select.to_sql
+        if @count
+          str.prepend('SELECT  COUNT(count_column) FROM (').concat(') subquery_for_count')
+        end
+        str
+      end
+
+      def project(table, arel_json_field)
+        if @count
+          table.project(Arel::Nodes::SqlLiteral.new('1').as('count_column'))
         else
           table.project(arel_json_field)
         end
-        collector = collector.where(@criteria) if @criteria
-        if @json_criteria_path && @json_criteria_value
-          refinement = Arel::Nodes::JsonHashDoubleArrow.new(arel_json_field, @json_criteria_path)
-          collector = collector.where(
-            Arel::Nodes::Equality.new(refinement, @json_criteria_value)
-          )
-        end
-        collector = collector.skip(@offset) if @offset
-        collector = collector.take(@limit) if @limit
-        collector = collector.order(table[:id].asc)
-        collector.to_sql.tap{|s| puts s}
       end
     end
   end
