@@ -31,7 +31,7 @@ module ROM
       end
 
       def build_query
-        query_class.new
+        @query_class.new
       end
     end
   end
