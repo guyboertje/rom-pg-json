@@ -28,7 +28,7 @@ module ROM
 
       def count(query)
         @pool.with_connection do |connection|
-          exec_sql(connection, query).first.to_i
+          exec_sql(connection, to_count_sql(query)).first.to_i
         end
       end
 
