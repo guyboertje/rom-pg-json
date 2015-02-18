@@ -30,12 +30,8 @@ module ROM
         self
       end
 
-      def set_count(flag)
-        @count = flag
-      end
-
       def order_by(spec)
-        @order_spec
+        @order_spec = spec
       end
 
       def reset
