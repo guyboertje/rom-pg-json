@@ -13,8 +13,16 @@ module ROM
         dataset.each(query, &block)
       end
 
+      def each_string(&block)
+        dataset.each_string(query, &block)
+      end
+
       def all
         dataset.all(query)
+      end
+
+      def all_string
+        dataset.all_string(query)
       end
 
       def count

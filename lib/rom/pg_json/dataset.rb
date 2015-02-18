@@ -26,6 +26,20 @@ module ROM
         end
       end
 
+      def all_string(query)
+        @pool.with_connection do |connection|
+          exec_sql(connection, to_sql(query)).map(&:to_s)
+        end
+      end
+
+      def each_string(query, &block)
+        @pool.with_connection do |connection|
+          exec_sql(connection, to_sql(query)).map do |result|
+            result.to_s
+          end
+        end
+      end
+
       def count(query)
         @pool.with_connection do |connection|
           exec_sql(connection, to_count_sql(query)).first.to_i

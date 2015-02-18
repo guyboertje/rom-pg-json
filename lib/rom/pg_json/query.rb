@@ -46,7 +46,6 @@ module ROM
       end
 
       def sql(name)
-        puts '-------------------- SQL --------------------'
         table = Arel::Table.new(name)
         arel_json_field = table[@json_field]
         select = project(table, arel_json_field)
@@ -99,3 +98,5 @@ module ROM
     end
   end
 end
+
+
