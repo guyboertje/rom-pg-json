@@ -62,6 +62,13 @@ module ROM
         build_sql(select).tap{|s| puts s}
       end
 
+      def count_sql(name)
+        @count = true
+        sql(name)
+      ensure
+        @count = false
+      end
+
       private
 
       def add_ordering(select, table)

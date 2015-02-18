@@ -12,16 +12,16 @@ module ROM
 
       def each(query, &block)
         @pool.with_connection do |connection|
-          exec_sql(connection, query).each do |result|
-            block.call result.nil? ? Hash.new : JSON.parse(result)
+          exec_sql(connection, to_sql(query)).each do |result|
+            block.call transform(result)
           end
         end
       end
 
       def all(query)
         @pool.with_connection do |connection|
-          exec_sql(connection, query).map do |result|
-            result.nil? ? Hash.new : JSON.parse(result)
+          exec_sql(connection, to_sql(query)).map do |result|
+            transform(result)
           end
         end
       end
@@ -38,9 +38,20 @@ module ROM
 
       private
 
-      def exec_sql(con, query)
-        sql = query.sql(@name)
+      def transform(result)
+        result.nil? ? Hash.new : JSON.parse(result)
+      end
+
+      def exec_sql(con, sql)
         con.raw_connection.exec(sql).values.flatten
+      end
+
+      def to_sql(query)
+        query.sql(@name)
+      end
+
+      def to_count_sql(query)
+        query.count_sql(@name)
       end
     end
   end
