@@ -48,7 +48,7 @@ read_root = Rails.root.join('app', 'read')
         ROM::PgJson::Query
       )
     end
-    %w(relations mappers).each do |type|
+    %w(models relations mappers).each do |type|
       Dir[read_root.join("#{type}/**/*.rb").to_s].each do |path|
         require_dependency(path)
       end

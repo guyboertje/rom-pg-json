@@ -46,13 +46,15 @@ module ROM
       end
 
       def sql(name)
+        @wheres = []
         table = Arel::Table.new(name)
         arel_json_field = table[@json_field]
         select = project(table, arel_json_field)
-        select.where(@criteria) if @criteria
+        add_criteria(select, table)
+        add_json_criteria(select, arel_json_field)
+        select.where(Arel::Nodes::And.new(@wheres)) if !@wheres.size.zero?
         select.skip(@offset) if @offset
         select.take(@limit) if @limit
-        add_json_criteria(select, arel_json_field)
         add_ordering(select, table)
         build_sql(select).tap{|s| puts s}
       end
@@ -73,11 +75,28 @@ module ROM
         end
       end
 
+      def add_criteria(select, table)
+        # this is very simple
+        # criteria can be a SQL string or a Hash of field: value
+        # where value is a Range, Array or Value
+        # and the contents of value are compatible withn the fields db datatype
+        # if you need 'less than' use a Range for now
+        # updated_at: Range.new((Date.today - 7).midnight, Date.today.succ.midnight - 1)
+        # so NOT {field: [Range.new(3,6), 8, 9]} -> (field BETWEEN 3 AND 6) OR field IN (2,8)
+        if String === @criteria
+          @wheres.push Arel.sql(@criteria)
+        elsif Hash === @criteria
+          @criteria.each do |k,v|
+            @wheres.push build_node(table[k], v)
+          end
+        end
+      end
+
       def add_json_criteria(select, field)
-        return unless @json_criteria_path && @json_criteria_value
-        path_node = Arel::Nodes::JsonHashDoubleArrow.new(field, @json_criteria_path)
-        equals_node = Arel::Nodes::Equality.new(path_node, @json_criteria_value)
-        select.where(equals_node)
+        if @json_criteria_path && @json_criteria_value
+          path_node = Arel::Nodes::JsonHashDoubleArrow.new(field, @json_criteria_path)
+          @wheres.push Arel::Nodes::Equality.new(path_node, @json_criteria_value)
+        end
       end
 
       def build_sql(select)
@@ -93,6 +112,15 @@ module ROM
           table.project(Arel::Nodes::SqlLiteral.new('1').as('count_column'))
         else
           table.project(arel_json_field)
+        end
+      end
+
+      def build_node(attribute, value)
+        case value
+        when Range, Array
+          Arel::Nodes::Grouping.new(attribute.in(value))
+        else
+          attribute.eq(value)
         end
       end
     end
