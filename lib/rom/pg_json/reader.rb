@@ -1,8 +1,8 @@
 module ROM
   class Reader
     def reset_relation
-      original_relation = @relation
-      @relation = original_relation.class.new(original_relation.dataset, original_relation.__registry__)
+      old = @relation
+      @relation = old.class.new(old.dataset, old.__registry__)
     end
   end
 
@@ -12,6 +12,17 @@ module ROM
     def read(name, &block)
       readers[name].reset_relation
       orig_read(name, &block)
+    end
+
+    def relate(name, &block)
+      old = relations[name]
+      relation = old.class.new(old.dataset, old.__registry__)
+      
+      if block_given?
+        yield(relation)
+      else
+        relation
+      end
     end
   end
 end
