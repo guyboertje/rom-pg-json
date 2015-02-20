@@ -16,12 +16,12 @@ module ROM
       end
 
       def criteria(criteria)
-        @criteria = criteria
+        @criterias.push criteria
         self
       end
 
       def json_criteria(path, value)
-        @json_criteria_path, @json_criteria_value = path, value
+        @json_criterias.push([path, value])
         self
       end
 
@@ -36,9 +36,8 @@ module ROM
 
       def reset
         @json_field = :serialised_data
-        @json_criteria_path = nil
-        @json_criteria_value = nil
-        @criteria = nil
+        @json_criterias = []
+        @criterias = []
         @limit = nil
         @offset = nil
         @count = false
@@ -83,19 +82,21 @@ module ROM
         # if you need 'less than' use a Range for now
         # updated_at: Range.new((Date.today - 7).midnight, Date.today.succ.midnight - 1)
         # so NOT {field: [Range.new(3,6), 8, 9]} -> (field BETWEEN 3 AND 6) OR field IN (2,8)
-        if String === @criteria
-          @wheres.push Arel.sql(@criteria)
-        elsif Hash === @criteria
-          @criteria.each do |k,v|
-            @wheres.push build_node(table[k], v)
+        @criterias.each do |criteria|
+          if String === criteria
+            @wheres.push Arel.sql(criteria)
+          elsif Hash === criteria
+            criteria.each do |k,v|
+              @wheres.push build_node(table[k], v)
+            end
           end
         end
       end
 
       def add_json_criteria(select, field)
-        if @json_criteria_path && @json_criteria_value
-          path_node = Arel::Nodes::JsonHashDoubleArrow.new(field, @json_criteria_path)
-          @wheres.push Arel::Nodes::Equality.new(path_node, @json_criteria_value)
+        @json_criterias.each do |path, value|
+          path_node = Arel::Nodes::JsonHashDoubleArrow.new(field, path)
+          @wheres.push Arel::Nodes::Equality.new(path_node, value)
         end
       end
 
