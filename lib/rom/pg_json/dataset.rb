@@ -1,5 +1,3 @@
-require 'arel'
-require 'arel_pg_json'
 require 'json'
 
 module ROM

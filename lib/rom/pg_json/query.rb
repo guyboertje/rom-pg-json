@@ -1,3 +1,6 @@
+require 'arel'
+require 'arel_pg_json'
+
 module ROM
   module PgJson
     class Query
@@ -45,13 +48,12 @@ module ROM
       end
 
       def sql(name)
-        @wheres = []
         table = Arel::Table.new(name)
         arel_json_field = table[@json_field]
         select = project(table, arel_json_field)
-        add_criteria(select, table)
-        add_json_criteria(select, arel_json_field)
-        select.where(Arel::Nodes::And.new(@wheres)) if !@wheres.size.zero?
+        wheres = collect_criteria(table) + 
+                 collect_json_criteria(arel_json_field)
+        select.where(Arel::Nodes::And.new(wheres)) if !wheres.size.zero?
         select.skip(@offset) if @offset
         select.take(@limit) if @limit
         add_ordering(select, table)
@@ -74,7 +76,7 @@ module ROM
         end
       end
 
-      def add_criteria(select, table)
+      def collect_criteria(table)
         # this is very simple
         # criteria can be a SQL string or a Hash of field: value
         # where value is a Range, Array or Value
@@ -82,21 +84,23 @@ module ROM
         # if you need 'less than' use a Range for now
         # updated_at: Range.new((Date.today - 7).midnight, Date.today.succ.midnight - 1)
         # so NOT {field: [Range.new(3,6), 8, 9]} -> (field BETWEEN 3 AND 6) OR field IN (2,8)
-        @criterias.each do |criteria|
+        @criterias.each_with_object([]) do |criteria, array|
           if String === criteria
-            @wheres.push Arel.sql(criteria)
+            array.push Arel.sql(criteria)
           elsif Hash === criteria
             criteria.each do |k,v|
-              @wheres.push build_node(table[k], v)
+              array.push build_node(table[k], v)
             end
           end
         end
       end
 
-      def add_json_criteria(select, field)
-        @json_criterias.each do |path, value|
-          path_node = Arel::Nodes::JsonHashDoubleArrow.new(field, path)
-          @wheres.push Arel::Nodes::Equality.new(path_node, value)
+      def collect_json_criteria(field)
+        @json_criterias.each_with_object([]) do |(path, value), array|
+          array.push  Arel::Nodes::Equality.new(
+                        Arel::Nodes::JsonHashDoubleArrow.new(field, path),
+                        value
+                      )
         end
       end
 
