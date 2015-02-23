@@ -24,7 +24,7 @@ module ROM
       end
 
       def json_criteria(path, value)
-        @json_criterias.push([path, value])
+        @json_criterias.push([path, value.to_s])
         self
       end
 
@@ -51,7 +51,7 @@ module ROM
         table = Arel::Table.new(name)
         arel_json_field = table[@json_field]
         select = project(table, arel_json_field)
-        wheres = collect_criteria(table) + 
+        wheres = collect_criteria(table) +
                  collect_json_criteria(arel_json_field)
         select.where(Arel::Nodes::And.new(wheres)) if !wheres.size.zero?
         select.skip(@offset) if @offset
