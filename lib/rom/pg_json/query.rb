@@ -57,7 +57,7 @@ module ROM
         select.skip(@offset) if @offset
         select.take(@limit) if @limit
         add_ordering(select, table)
-        build_sql(select).tap{|s| puts s}
+        build_sql(select)
       end
 
       def count_sql(name)
@@ -109,7 +109,7 @@ module ROM
         if @count
           str.prepend('SELECT  COUNT(count_column) FROM (').concat(') subquery_for_count')
         end
-        str
+        str.tap{|s| puts s}
       end
 
       def project(table, arel_json_field)

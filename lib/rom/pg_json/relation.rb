@@ -29,6 +29,10 @@ module ROM
         dataset.count(query)
       end
 
+      def len
+        dataset.count(query)
+      end
+
       def query
         @query
       end
