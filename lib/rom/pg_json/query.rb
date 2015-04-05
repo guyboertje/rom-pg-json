@@ -96,13 +96,20 @@ module ROM
       end
 
       def collect_json_criteria(field)
-        @json_criterias.each_with_object([]) do |(path, value), array|
-          array.push  Arel::Nodes::Equality.new(
-                        Arel::Nodes::JsonHashDoubleArrow.new(field, path),
-                        value
-                      )
-        end
+        hash = Hash[@json_criterias]
+        json = hash.to_json
+        node = Arel::Nodes::JsonbAtArrow.new(field, json)
+        [node]
       end
+
+      # def collect_json_criteria(field)
+      #   @json_criterias.each_with_object([]) do |(path, value), array|
+      #     array.push  Arel::Nodes::Equality.new(
+      #                   Arel::Nodes::JsonHashDoubleArrow.new(field, path),
+      #                   value
+      #                 )
+      #   end
+      # end
 
       def build_sql(select)
         str = select.to_sql
