@@ -24,7 +24,22 @@ module ROM
       end
 
       def json_criteria(path, value)
-        @json_criterias.push([path, value.to_s])
+        @json_criterias.push([path, value])
+        self
+      end
+
+      def json_expression_criteria(path, op, value)
+        @json_expression_criterias.push([path, op, value])
+        self
+      end
+
+      def json_expression_time(path, values, cast_as = 'int8')
+        @json_expression_times.push([path, values, cast_as])
+        self
+      end
+
+      def json_order_by(spec)
+        @json_order_spec = spec
         self
       end
 
@@ -40,11 +55,14 @@ module ROM
       def reset
         @json_field = :serialised_data
         @json_criterias = []
+        @json_expression_criterias = []
+        @json_expression_times = []
+        @json_order_spec = {}
         @criterias = []
         @limit = nil
         @offset = nil
         @count = false
-        @order_spec = {id: :asc}
+        @order_spec = {}
       end
 
       def sql(name)
@@ -52,11 +70,17 @@ module ROM
         arel_json_field = table[@json_field]
         select = project(table, arel_json_field)
         wheres = collect_criteria(table) +
-                 collect_json_criteria(arel_json_field)
+                 collect_json_criteria(arel_json_field) +
+                 collect_json_expression_criteria(arel_json_field) +
+                 collect_json_expression_times(arel_json_field)
         select.where(Arel::Nodes::And.new(wheres)) if !wheres.size.zero?
         select.skip(@offset) if @offset
         select.take(@limit) if @limit
-        add_ordering(select, table)
+        default_ordering
+        add_ordering(select,
+          ordering_to_arel(table),
+          json_ordering_to_arel(arel_json_field)
+        )
         build_sql(select)
       end
 
@@ -69,11 +93,39 @@ module ROM
 
       private
 
-      def add_ordering(select, table)
-        return if @count
-        @order_spec.each do |field, dir|
-          select.order(table[field].send(dir))
+      def default_ordering
+        if @order_spec.empty? && @json_order_spec.empty?
+          @order_spec[:id] = :asc
         end
+      end
+
+      def json_ordering_to_arel(arel_json_field)
+        return [] if @count
+        @json_order_spec.map do |field, dir|
+
+          order_node = Arel::Nodes::Ascending.new(
+            Arel::Nodes::JsonDashArrow.new(arel_json_field, field)
+          )
+          dir.to_s.upcase.start_with?('DESC') ?
+            order_node.reverse : order_node
+        end
+      end
+
+      def ordering_to_arel(table)
+        return []
+        # return [] if @count
+        @order_spec.map do |field, dir|
+          order_node = Arel::Nodes::Ascending.new(
+            table[field]
+          )
+          dir.to_s.upcase.start_with?('DESC') ?
+            order_node.reverse : order_node
+        end
+      end
+
+      def add_ordering(select, order_spec, json_spec)
+        return if @count
+        select.order *order_spec.concat(json_spec)
       end
 
       def collect_criteria(table)
@@ -96,20 +148,57 @@ module ROM
       end
 
       def collect_json_criteria(field)
+        return [] if @json_criterias.size.zero?
         hash = Hash[@json_criterias]
         json = hash.to_json
-        node = Arel::Nodes::JsonbAtArrow.new(field, json)
-        [node]
+        [Arel::Nodes::JsonbAtArrow.new(field, json)]
       end
 
-      # def collect_json_criteria(field)
-      #   @json_criterias.each_with_object([]) do |(path, value), array|
-      #     array.push  Arel::Nodes::Equality.new(
-      #                   Arel::Nodes::JsonHashDoubleArrow.new(field, path),
-      #                   value
-      #                 )
-      #   end
-      # end
+      def collect_json_expression_criteria(field)
+        return [] if @json_expression_criterias.size.zero?
+        @json_expression_criterias.each_with_object([]) do |(path, op, value), array|
+          array.push arel_node_for_expression(field, path, op, value)
+        end
+      end
+
+      def arel_node_for_expression(field, path, op, value)
+        outer_node = arel_node_for(op)
+        lhs = Arel::Nodes::JsonDashArrow.new(field, path)
+        rhs = value
+        if Array === value
+          lhs = Arel::Nodes::JsonDashDoubleArrow.new(field, path)
+          inter = "'{#{value.join(',')}}'::text[]"
+          function = op == '!=' ? 'ALL' : 'ANY'
+          rhs = Arel::Nodes::NamedFunction.new(function, [Arel.sql(inter)])
+        end
+        outer_node.new(lhs, rhs)
+      end
+
+      def collect_json_expression_times(field)
+        return [] if @json_expression_times.size.zero?
+        @json_expression_times.each_with_object([]) do |(path, values, cast_as), array|
+          node_class, right_node = arel_nodes_for_times(values)
+          array.push node_class.new(
+            Arel::Nodes::CastJson.new(
+              Arel::Nodes::JsonDashDoubleArrow.new(field, path),
+              cast_as
+            ), right_node
+          )
+        end
+      end
+
+      def arel_nodes_for_times(values)
+        val1, val2 = Array(values)
+        if !val2.nil?
+          if String === val2
+            [arel_node_for(val2), val1]
+          else
+            [Arel::Nodes::Between, Arel::Nodes::And.new(val1, val2)]
+          end
+        else
+          [Arel::Nodes::Equality, val1]
+        end
+      end
 
       def build_sql(select)
         str = select.to_sql
@@ -135,8 +224,20 @@ module ROM
           attribute.eq(value)
         end
       end
+
+      def arel_node_for(op)
+        return Arel::Nodes::JsonbQuestionAnd   if op.start_with?('&') # might be &&
+        return Arel::Nodes::JsonbQuestionOr    if op.start_with?('|') # might be ||
+
+        return Arel::Nodes::GreaterThan        if op == '>'
+        return Arel::Nodes::GreaterThanOrEqual if op == '>='
+        return Arel::Nodes::LessThan           if op == '<'
+        return Arel::Nodes::LessThanOrEqual    if op == '<='
+        return Arel::Nodes::NotEqual           if op == '!='
+
+        Arel::Nodes::Equality
+      end
     end
   end
 end
-
 
