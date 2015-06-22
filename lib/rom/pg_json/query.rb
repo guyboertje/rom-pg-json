@@ -93,6 +93,14 @@ module ROM
 
       private
 
+      def quoted_node(val)
+        Arel::Nodes.build_quoted(val)
+      end
+
+      def unquoted_node(val)
+        Arel::Nodes.SqlLiteral.new(val)
+      end
+
       def default_ordering
         if @order_spec.empty? && @json_order_spec.empty?
           @order_spec[:id] = :asc
@@ -149,9 +157,8 @@ module ROM
 
       def collect_json_criteria(field)
         return [] if @json_criterias.size.zero?
-        hash = Hash[@json_criterias]
-        json = hash.to_json
-        [Arel::Nodes::JsonbAtArrow.new(field, json)]
+        json = Hash[@json_criterias].to_json
+        [Arel::Nodes::JsonbAtArrow.new(field, quoted_node(json))]
       end
 
       def collect_json_expression_criteria(field)
@@ -163,10 +170,10 @@ module ROM
 
       def arel_node_for_expression(field, path, op, value)
         outer_node = arel_node_for(op)
-        lhs = Arel::Nodes::JsonDashArrow.new(field, path)
-        rhs = value
+        lhs = Arel::Nodes::JsonDashArrow.new(field, quoted_node(path))
+        rhs = quoted_node(value)
         if Array === value
-          lhs = Arel::Nodes::JsonDashDoubleArrow.new(field, path)
+           lhs = Arel::Nodes::JsonDashDoubleArrow.new(field, quoted_node(path))
           inter = "'{#{value.join(',')}}'::text[]"
           function = op == '!=' ? 'ALL' : 'ANY'
           rhs = Arel::Nodes::NamedFunction.new(function, [Arel.sql(inter)])
@@ -180,7 +187,7 @@ module ROM
           node_class, right_node = arel_nodes_for_times(values)
           array.push node_class.new(
             Arel::Nodes::CastJson.new(
-              Arel::Nodes::JsonDashDoubleArrow.new(field, path),
+              Arel::Nodes::JsonDashDoubleArrow.new(field, quoted_node(path)),
               cast_as
             ), right_node
           )
@@ -193,7 +200,7 @@ module ROM
           if String === val2
             [arel_node_for(val2), val1]
           else
-            [Arel::Nodes::Between, Arel::Nodes::And.new(val1, val2)]
+            [Arel::Nodes::Between, [val1, val2]]
           end
         else
           [Arel::Nodes::Equality, val1]
@@ -205,7 +212,8 @@ module ROM
         if @count
           str.prepend('SELECT  COUNT(count_column) FROM (').concat(') subquery_for_count')
         end
-        str.tap{|s| puts s}
+        # str.tap{|s| puts s}
+        str
       end
 
       def project(table, arel_json_field)
@@ -228,6 +236,7 @@ module ROM
       def arel_node_for(op)
         return Arel::Nodes::JsonbQuestionAnd   if op.start_with?('&') # might be &&
         return Arel::Nodes::JsonbQuestionOr    if op.start_with?('|') # might be ||
+        return Arel::Nodes::JsonbQuestion      if op == '?'
 
         return Arel::Nodes::GreaterThan        if op == '>'
         return Arel::Nodes::GreaterThanOrEqual if op == '>='
