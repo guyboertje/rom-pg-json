@@ -1,6 +1,16 @@
 require 'arel'
 require 'arel_pg_json'
 
+if !Arel::Nodes.respond_to?(:build_quoted)
+  module Arel
+    module Nodes
+      def self.build_quoted(val)
+        SqlLiteral.new(val.prepend(?').concat(?'))
+      end
+    end
+  end
+end
+
 module ROM
   module PgJson
     class Query
@@ -171,12 +181,13 @@ module ROM
       def arel_node_for_expression(field, path, op, value)
         outer_node = arel_node_for(op)
         lhs = Arel::Nodes::JsonDashArrow.new(field, quoted_node(path))
-        rhs = quoted_node(value)
         if Array === value
-           lhs = Arel::Nodes::JsonDashDoubleArrow.new(field, quoted_node(path))
+          lhs = Arel::Nodes::JsonDashDoubleArrow.new(field, quoted_node(path))
           inter = "'{#{value.join(',')}}'::text[]"
           function = op == '!=' ? 'ALL' : 'ANY'
           rhs = Arel::Nodes::NamedFunction.new(function, [Arel.sql(inter)])
+        else
+          rhs = quoted_node(value)
         end
         outer_node.new(lhs, rhs)
       end
@@ -200,7 +211,7 @@ module ROM
           if String === val2
             [arel_node_for(val2), val1]
           else
-            [Arel::Nodes::Between, [val1, val2]]
+            [Arel::Nodes::Between, Arel::Nodes::And.new([val1, val2])]
           end
         else
           [Arel::Nodes::Equality, val1]
