@@ -10,7 +10,8 @@ Gem::Specification.new do |spec|
 
   Rom::PgJson::BuildInfo.new.add_to_gemspec(spec)
 
-  spec.add_runtime_dependency 'rom'
+  spec.add_runtime_dependency 'rom', '~> 0.8.0'
+  spec.add_runtime_dependency 'arel-pg-json', '~> 0.0.9'
 
   spec.add_development_dependency 'bundler', '~> 1.7'
   spec.add_development_dependency 'rspec-core', '~> 3.2'

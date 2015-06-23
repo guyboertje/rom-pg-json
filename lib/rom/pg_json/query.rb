@@ -5,7 +5,8 @@ if !Arel::Nodes.respond_to?(:build_quoted)
   module Arel
     module Nodes
       def self.build_quoted(val)
-        SqlLiteral.new(val.prepend(?').concat(?'))
+        return val if val.start_with?(?') && val.end_with?(?')
+        SqlLiteral.new("'#{val}'")
       end
     end
   end
@@ -60,6 +61,7 @@ module ROM
 
       def order_by(spec)
         @order_spec = spec
+        self
       end
 
       def reset
@@ -119,10 +121,9 @@ module ROM
 
       def json_ordering_to_arel(arel_json_field)
         return [] if @count
-        @json_order_spec.map do |field, dir|
-
+        @json_order_spec.map do |path, dir|
           order_node = Arel::Nodes::Ascending.new(
-            Arel::Nodes::JsonDashArrow.new(arel_json_field, field)
+            Arel::Nodes::JsonDashArrow.new(arel_json_field, quoted_node(path))
           )
           dir.to_s.upcase.start_with?('DESC') ?
             order_node.reverse : order_node
@@ -130,11 +131,10 @@ module ROM
       end
 
       def ordering_to_arel(table)
-        return []
-        # return [] if @count
+        return [] if @count
         @order_spec.map do |field, dir|
           order_node = Arel::Nodes::Ascending.new(
-            table[field]
+            table[field.to_sym]
           )
           dir.to_s.upcase.start_with?('DESC') ?
             order_node.reverse : order_node
@@ -180,13 +180,14 @@ module ROM
 
       def arel_node_for_expression(field, path, op, value)
         outer_node = arel_node_for(op)
-        lhs = Arel::Nodes::JsonDashArrow.new(field, quoted_node(path))
+        quoted_path = quoted_node(path)
         if Array === value
-          lhs = Arel::Nodes::JsonDashDoubleArrow.new(field, quoted_node(path))
-          inter = "'{#{value.join(',')}}'::text[]"
-          function = op == '!=' ? 'ALL' : 'ANY'
+          lhs = Arel::Nodes::JsonDashDoubleArrow.new(field, quoted_path)
+          inter = value.join(',').prepend("'{").concat("}'::text[]")
+          function = (op == '!=') ? 'ALL' : 'ANY'
           rhs = Arel::Nodes::NamedFunction.new(function, [Arel.sql(inter)])
         else
+          lhs = Arel::Nodes::JsonDashArrow.new(field, quoted_path)
           rhs = quoted_node(value)
         end
         outer_node.new(lhs, rhs)

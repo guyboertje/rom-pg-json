@@ -1,3 +1,6 @@
+root = Pathname(__FILE__).dirname
+RECORDS = File.read(root.join('records.json').to_s)
+
 module FakeRecord
   class Column < Struct.new(:name, :type)
   end
@@ -18,6 +21,7 @@ module FakeRecord
         'products' => [
           Column.new('id', :integer),
           Column.new('price', :integer),
+          Column.new('jdata', :jsonb),
           Column.new('serialised_data', :jsonb)
         ]
       }
@@ -85,6 +89,19 @@ module FakeRecord
         thing
       else
         "'#{thing.to_s.gsub("'", "\\\\'")}'"
+      end
+    end
+
+    def raw_connection
+      self
+    end
+
+    def exec(sql)
+      # puts sql
+      if sql =~ /\A\s*SELECT\s+COUNT/
+        {'count' => 20}
+      else
+        JSON.parse(RECORDS)
       end
     end
   end

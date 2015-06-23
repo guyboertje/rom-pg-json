@@ -1,0 +1,5 @@
+{
+  "uno": "{\"id\":1,\"name\":\"foo\",\"price\":4200,\"expired\":true}",
+  "duo": "{\"id\":2,\"name\":\"bar\",\"price\":4250,\"expired\":false}",
+  "tre": "{\"id\":3,\"name\":\"baz\",\"price\":4400,\"expired\":false}"
+}

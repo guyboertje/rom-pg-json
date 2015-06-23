@@ -33,7 +33,7 @@ module ROM
       def each_string(query, &block)
         @pool.with_connection do |connection|
           exec_sql(connection, to_sql(query)).map do |result|
-            result.to_s
+            block.call result.to_s
           end
         end
       end

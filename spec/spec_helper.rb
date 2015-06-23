@@ -1,3 +1,4 @@
+require 'rubygems'
 require 'bundler/setup'
 
 require 'rom'
@@ -15,9 +16,8 @@ Oj.default_options = { mode: :strict }
 
 module HashToJson
   def to_json
-    Oj.dump(self)
+    JSON.dump(self)
   end
 end
 
 Hash.send :include, HashToJson
-
